@@ -9,6 +9,9 @@ verify_ssl = true
 whitenoise = "*"
 gunicorn = "*"
 django = "*"
+django-crispy-forms = "*"
+reportlab = "*"
+django-wkhtmltopdf = "*"
 
 [requires]
 python_version = "3.8"

@@ -40,7 +40,11 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'blog',
     'accounts',
+    'crispy_forms',
+    'wkhtmltopdf',
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

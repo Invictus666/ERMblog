@@ -2,11 +2,73 @@
 
 {% block content %}
 <div class="post-entry">
-  <h2>{{ post.title }}</h2>
-  <p>{{ post.body }}</p>
+  <h2>{{ post.title }}
+    {% if post.include == True %}
+       ✓
+    {% else %}
+      ✖
+    {% endif %}
+  </h2>
+  <br>
+  <div class="container">
+  <div class='row'>
+  <div class='col-md-4'><p><b>Ticker:</b> {{ post.ticker }}</p></div>
+  <div class='col-md-4'><p><b>Current Price:</b> ${{ post.current_price }}</p></div>
+  <div class='col-md-4'><p><b>Target Price:</b> ${{ post.target_price }}</p></div>
+  </div>
+  <br>
+  </div>
+  <div class="container">
+  <div class='row'>
+  <div class='col-md-4'><p><b>Current Yield:</b> {{ post.current_yield }}%</p></div>
+  <div class='col-md-4'><p><b>Projected Yield:</b> {{ post.projected_yield }}%</p></div>
+  </div>
+  </div>
+  <br>
+
+  <div class='col-md-12'><p><b>Key Issue: </b><br><br> {{ post.body }}</p><br></div>
+  <div class='col-md-12'><p><b>Rationale: </b><br><br> {{ post.rationale }}</p><br></div>
+
+  <br>
+  <p>Created : {{ post.created_at }}</p>
+  <p>Updated : {{ post.updated_at }}</p>
+  </div>
+
+
 </div>
 
-<a href="{% url 'post_edit' post.pk %}">+ Edit Blog Post</a>
+{% if user.is_authenticated %}
+<br/>
+<hr>
+<form action="{% url 'like_post' post.pk %}" method="POST">
+  {% csrf_token %}
+  {% if liked %}
+  <button type="submit" name="post_id" value = "{{ post.id }}">Unvote</button> - {{total_likes}} Likes
+  {% else %}
+  <button type="submit" name="post_id" value = "{{ post.id }}">Vote</button> - {{total_likes}} Likes
+  {% endif %}
+</form>
+
 <p>
-<a href="{% url 'post_delete' post.pk %}">- Delete Blog Post</a>
+<form method="post" action="{% url 'post_comment_create' post.id %}">
+    {% csrf_token %}
+    {{ comment_form }}
+<input type="submit" value="Submit">
+</form>
+{% endif %}
+
+{% for comment in comments %}
+<p> "{{ comment.text }}" by {{comment.author}}
+({{ comment.updated_at }})
+{% if user == comment.author %}
+<a href="{% url 'post_comment_delete' comment.id %}">Delete</a>
+{% endif %}
+</p>
+{% endfor %}
+
+{% if post.author == user %}
+<a href="{% url 'post_edit' post.pk %}">+ Edit Post Entry</a>
+<p>
+<a href="{% url 'post_delete' post.pk %}">- Delete Post Entry</a>
+{% endif %}
 {% endblock content %}
