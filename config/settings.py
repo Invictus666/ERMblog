@@ -25,7 +25,7 @@ SECRET_KEY = '24#n&aq!8fhc!4u=by4pt4_(trxa0l%1^#dhw*b1v)pvv$$qpf'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.herokuapp.com','localhost','127.0.0.1']
+ALLOWED_HOSTS = ['.ngrok.io','.herokuapp.com','localhost','127.0.0.1']
 
 
 # Application definition
