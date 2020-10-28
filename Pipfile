@@ -100,7 +100,6 @@ protobuf = "==3.12.2"
 psycopg2 = "==2.8.6"
 pycares = "==3.1.1"
 pycparser = "==2.20"
-pydeck = "==0.4.0b2"
 pyparsing = "==2.4.7"
 pyrsistent = "==0.16.0"
 python-dateutil = "==2.8.1"
@@ -163,6 +162,7 @@ QtPy = "==1.9.0"
 QuantStats = "==0.0.25"
 Send2Trash = "==1.5.0"
 Werkzeug = "==1.0.0"
+environs = {extras = ["django"], version = "*"}
 
 [requires]
 python_version = "3.8"
