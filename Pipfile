@@ -12,6 +12,7 @@ django = "*"
 django-crispy-forms = "*"
 reportlab = "*"
 django-wkhtmltopdf = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.8"
