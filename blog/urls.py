@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import BlogListView,BlogDetailView,BlogCreateView,BlogUpdateView,BlogDeleteView,CommentCreateView,CommentDeleteView
 from .views import AddVoteView,DeleteVoteView,LikeView,LikeHomeView,SummaryListView
+from .views import GenerateSummaryPdf, GenerateStockPdf
 from django.urls import reverse_lazy
 from wkhtmltopdf.views import PDFTemplateView
 
@@ -18,4 +19,6 @@ urlpatterns = [
     path('like/<int:pk>',LikeView, name='like_post'),
     path('likehome/<int:pk>',LikeHomeView, name='like_home_post'),
     path('summary',SummaryListView.as_view(), name='summary_posts'),
+    path('pdf/', GenerateSummaryPdf.as_view()),
+    path('pdf/<int:pk>', GenerateStockPdf.as_view()),
 ]

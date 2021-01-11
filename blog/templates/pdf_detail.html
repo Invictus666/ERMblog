@@ -1,0 +1,42 @@
+{% block content %}
+<html>
+
+<head>
+<style>
+table, th, td {
+  border: 2px solid black;
+  border-collapse: collapse;
+  padding: 10px;
+}
+</style>
+</head>
+
+<h1 style="text-align:center">Stocks Selected by ERM Programme</h1>
+
+<table>
+    <tr>
+      <th scope="col">Stock</th>
+      <th scope="col">Ticker</th>
+      <th scope="col">Current Price</th>
+      <th scope="col">Target Price</th>
+      <th scope="col">Current Yield</th>
+      <th scope="col">Projected Yield</th>
+      <th scope="col">Rationale</th>
+    </tr>
+ {% for post in sorted_posts %}
+ {% if post.include %}
+    <tr>
+      <th scope="row">{{ post.title }}</th>
+      <td style="text-align:center">{{ post.ticker }}</td>
+      <td style="text-align:center">${{ post.current_price }}</td>
+      <td style="text-align:center">${{ post.target_price }}</td>
+      <td style="text-align:center">{{ post.current_yield }}%</td>
+      <td style="text-align:center">{{ post.projected_yield }}%</td>
+      <td style="text-align:center">{{ post.rationale }}</td>
+    </tr>
+{% endif %}
+{% endfor %}
+</table>
+</html>
+
+{% endblock content %}

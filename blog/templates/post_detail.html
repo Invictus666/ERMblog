@@ -1,8 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <div class="post-entry">
-  <h2>{{ post.title }}
+  <div class="post-entry text-center">
+  <h2>{{ post.title }} ( Ticker: {{post.ticker}} ) Latest Close: ${{latest_close}}
     {% if post.include == True %}
        ✓
     {% else %}
@@ -10,24 +12,49 @@
     {% endif %}
   </h2>
   <br>
+  </div>
+
+  <div class="container">
+  <div class='col-md-7' style="border:1px solid #cecece;"><p><img src="data:image/png;base64,{{ graph }}" alt=""></p><br></div>
+  <div class='col-md-5' style="border:1px solid #cecece;"><p>{{ stock_summary|safe }}</p><br></div>
+  </div>
+  <br>
+
   <div class="container">
   <div class='row'>
-  <div class='col-md-4'><p><b>Ticker:</b> {{ post.ticker }}</p></div>
-  <div class='col-md-4'><p><b>Current Price:</b> ${{ post.current_price }}</p></div>
-  <div class='col-md-4'><p><b>Target Price:</b> ${{ post.target_price }}</p></div>
+  <div class='col-md-6' style="border:1px solid #cecece;"><p><b>Current Price:</b> ${{ post.current_price }}</p></div>
+  <div class='col-md-6' style="border:1px solid #cecece;"><p><b>Target Price:</b> ${{ post.target_price }}</p></div>
   </div>
   <br>
   </div>
   <div class="container">
   <div class='row'>
-  <div class='col-md-4'><p><b>Current Yield:</b> {{ post.current_yield }}%</p></div>
-  <div class='col-md-4'><p><b>Projected Yield:</b> {{ post.projected_yield }}%</p></div>
+  <div class='col-md-6' style="border:1px solid #cecece;"><p><b>Current Yield:</b> {{ post.current_yield }}%</p></div>
+  <div class='col-md-6' style="border:1px solid #cecece;"><p><b>Projected Yield:</b> {{ post.projected_yield }}%</p></div>
   </div>
   </div>
   <br>
 
-  <div class='col-md-12'><p><b>Key Issue: </b><br><br> {{ post.body }}</p><br></div>
-  <div class='col-md-12'><p><b>Rationale: </b><br><br> {{ post.rationale }}</p><br></div>
+  <div class="container">
+  <div class='col-md-12' style="border:1px solid #cecece;"><p><b>Key Issue: </b><br><br> {{ post.business }}</p><br></div>
+  </div>
+  <br>
+
+  <div class="container">
+  <div class='col-md-12' style="border:1px solid #cecece;"><p><b>Pros: </b><br><br> {{ post.pros }}</p><br></div>
+  </div>
+  <br>
+
+  <div class="container">
+  <div class='col-md-12' style="border:1px solid #cecece;"><p><b>Cons: </b><br><br> {{ post.cons }}</p><br></div>
+  </div>
+  <br>
+
+  <div class="container">
+  <div class='col-md-12' style="border:1px solid #cecece;"><p><b>Rationale: </b><br><br> {{ post.rationale }}</p><br></div>
+  </div>
+  <br>
+
 
   <br>
   <p>Created : {{ post.created_at }}</p>

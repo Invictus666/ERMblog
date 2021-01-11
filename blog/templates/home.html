@@ -10,7 +10,7 @@
          ✖
       {% endif %}
       </h3>
-      {% if post.author == user %}
+      {% if post.author == user or user.is_superuser %}
         (<a href="{% url 'post_edit' post.id %}">Edit</a> |
         <a href="{% url 'post_delete' post.id %}">Delete</a>)
       {% endif %}
@@ -22,7 +22,7 @@
       </form>
       {% endif %}
 
-      {{ post.body }}
+      {{ post.business }}
     </div>
   {% endfor %}
 

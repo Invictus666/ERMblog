@@ -4,8 +4,6 @@
 
 {% block content %}
 
-
-
 <table class="table table-striped">
   <thead class="thead-dark">
     <tr>
@@ -15,7 +13,9 @@
       <th scope="col">Target Price</th>
       <th scope="col">Current Yield</th>
       <th scope="col">Projected Yield</th>
-      <th scope="col">Key Issue</th>
+      <th scope="col">Business</th>
+      <th scope="col">Pros</th>
+      <th scope="col">Cons</th>
       <th scope="col">Include</th>
       <th scope="col">Rationale</th>
     </tr>
@@ -29,7 +29,9 @@
       <td>${{ post.target_price }}</td>
       <td>{{ post.current_yield }}%</td>
       <td>{{ post.projected_yield }}%</td>
-      <td>{{ post.body }}</td>
+      <td>{{ post.business }}</td>
+      <td>{{ post.pros }}</td>
+      <td>{{ post.cons }}</td>
       <td>{{ post.include }}</td>
       <td>{{ post.rationale }}</td>
     </tr>
