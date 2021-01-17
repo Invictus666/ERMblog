@@ -12,6 +12,7 @@ from django.db.models import Q, Avg
 from .models import Post,Comment,Vote
 from .forms import CommentForm
 from .finance import get_current_price,get_stock_stats
+from .regime import return_regime_graph
 
 import matplotlib.pyplot as plt
 import io
@@ -23,7 +24,21 @@ import pandas_datareader.data as getData
 import yfinance as yf
 from datetime import date,timedelta
 
+
 yf.pdr_override()
+
+def return_regime(stock):
+    stock = stock + ".SI"
+    plt,df = return_regime_graph(stock)
+
+    fig = plt.gcf()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    string = base64.b64encode(buf.read())
+    data = urllib.parse.quote(string)
+    return data,df
+
 
 def return_graph(stock):
     stock = stock + ".SI"
@@ -40,17 +55,12 @@ def return_graph(stock):
     consolidated["Adj Close"].plot(grid=True,label=stock)
     plt.legend()
 
-    #imgdata = StringIO()
-    #fig.savefig(imgdata, format='svg')
-    #imgdata.seek(0)
-    #data = imgdata.getvalue()
     fig = plt.gcf()
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
     buf.seek(0)
     string = base64.b64encode(buf.read())
     data = urllib.parse.quote(string)
-
     return data
 
 def return_stock_summary(stock):
@@ -107,7 +117,8 @@ class BlogDetailView(DetailView):
         else:
             liked=False
         context = { 'post' : x, 'comments': comments, 'comment_form': comment_form,'total_likes':total_likes,'liked':liked }
-        context['graph'] = return_graph(x.ticker)
+        context['graph'],df = return_regime(x.ticker)
+        context['regime_data'] = df.to_html()
         context['latest_close'] = get_current_price(x.ticker)
         context['stock_summary'] = return_stock_summary(x.ticker).to_html()
         print(get_current_price(x.ticker))
@@ -205,7 +216,8 @@ class GenerateStockPdf(ListView):
         else:
             liked=False
         context = { 'post' : x, 'comments': comments, 'comment_form': comment_form,'total_likes':total_likes,'liked':liked }
-        context['graph'] = return_graph(x.ticker)
+        context['graph'],df = return_regime(x.ticker)
+        context['regime_data'] = df.to_html()
         context['latest_close'] = get_current_price(x.ticker)
         context['stock_summary'] = return_stock_summary(x.ticker).to_html(header=False)
         print(context['stock_summary'])

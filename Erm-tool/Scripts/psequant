@@ -1,0 +1,2 @@
+#!c:\project\erm-tool\scripts\python.exe
+echo "hey there, this is my first pip package"
