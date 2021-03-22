@@ -40,6 +40,24 @@ def build_stock_prices_dataframe(stocklist,lookback_in_years,monthly=False):
 
       return stocks_dataframe
 
+def build_portfolio_prices_dataframe(stocklist,lookback_in_years):
+      today = date.today()
+      stocks_dataframe = pd.DataFrame()
+
+      for stock in stocklist:
+        stock_data = getData.DataReader(stock,data_source='yahoo',start=today-timedelta(lookback_in_years*252),end=today)
+        returns_data = stock_data["Adj Close"]
+        stocks_dataframe[stock] = returns_data.ffill(axis=0)
+        stocks_dataframe[stock] = stocks_dataframe[stock].pct_change()
+
+      stocks_dataframe['Ret'] = stocks_dataframe.mean(axis=1)
+      stocks_dataframe['Return'] =  stocks_dataframe.mean(axis=1) + 1
+      stocks_dataframe['Portfolio'] = stocks_dataframe['Return'].cumprod()
+      stocks_dataframe['Portfolio'][0] = 1
+
+      return stocks_dataframe
+
+
 def get_stock_returns_array(stocklist, lookback_in_years, monthly=False):
 
       returns_list=[]
@@ -494,6 +512,7 @@ def analyse_regime(stocks_ticker):
 
 def return_regime_graph(stock_ticker):
   stock = stock_ticker
+
   stock_data = build_stock_prices_dataframe([stock],5,monthly=False)
   stock_data["Ret"] = stock_data.pct_change()*100
   stock_data = stock_data[['Ret', stock]].dropna()
@@ -518,6 +537,48 @@ def return_regime_graph(stock_ticker):
   #print(df)
 
   return plt,df
+
+def return_portfolio_regime_graph(stock_list):
+
+   stocks = []
+
+   for i in stock_list:
+     stocks.append(i + ".SI")
+
+   print(stocks)
+
+   stock_data = build_portfolio_prices_dataframe(stocks,5)
+   stock_data["Ret"][0] = 0
+
+   regime_data =  pd.DataFrame()
+   regime_data["Ret"] = stock_data["Ret"]*100
+   regime_data["Portfolio"] = stock_data["Portfolio"]
+
+   print(regime_data)
+
+   plt = plot_regime_color_new(regime_data, lambda_value=10,log_TR = True,label="Portfolio")
+
+   print(regime_data)
+
+   normal_data = stock_data[regime_data["State"]=="Normal"]
+   crash_data = stock_data[regime_data["State"]=="Crash"]
+
+   stock_return = (1+regime_data["Ret"]/100).prod()**(252/len(regime_data))-1
+   normal_return = (1+normal_data["Ret"]/100).prod()**(252/len(normal_data))-1
+   crash_return = (1+crash_data["Ret"]/100).prod()**(252/len(crash_data))-1
+
+   stock_return = round(stock_return*100,0)
+   normal_return = round(normal_return*100,0)
+   crash_return = round(crash_return*100,0)
+
+   stock_std = (regime_data["Ret"]/100).std()*np.sqrt(252)*100
+   normal_std = (normal_data["Ret"]/100).std()*np.sqrt(252)*100
+   crash_std = (crash_data["Ret"]/100).std()*np.sqrt(252)*100
+
+   df = pd.DataFrame({'Normal Regime':[normal_return,normal_std],'Crash Regime':[crash_return,crash_std],'Overall Performance':[stock_return,stock_std]},index=['Annualised Return (%)','Annualised Standard Deviation (%)'])
+   #print(df)
+
+   return plt,df
 
 #plt,df = return_regime_graph('CJLU.SI')
 #plt.show()

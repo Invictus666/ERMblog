@@ -11,8 +11,9 @@ from django.db.models import Q, Avg
 
 from .models import Post,Comment,Vote
 from .forms import CommentForm
-from .finance import get_current_price,get_stock_stats
-from .regime import return_regime_graph
+from .finance import get_current_price,get_stock_stats,get_portfolio_stats
+from .regime import return_regime_graph,return_portfolio_regime_graph
+from .ta import TABacktester
 
 import matplotlib.pyplot as plt
 import io
@@ -28,8 +29,12 @@ from datetime import date,timedelta
 yf.pdr_override()
 
 def return_regime(stock):
-    stock = stock + ".SI"
-    plt,df = return_regime_graph(stock)
+
+    if type(stock) is list:
+      plt,df = return_portfolio_regime_graph(stock)
+    else:
+      stock = stock + ".SI"
+      plt,df = return_regime_graph(stock)
 
     fig = plt.gcf()
     buf = io.BytesIO()
@@ -63,9 +68,44 @@ def return_graph(stock):
     data = urllib.parse.quote(string)
     return data
 
+def return_ta_graph(stock):
+    stock = stock + ".SI"
+    print(stock)
+    startdate  = date.today()-timedelta(365)
+    enddate = date.today()
+
+    smabt = TABacktester(stock,42,252,14,14,'2010-2-28', '2021-2-28',0)
+    smabt.optimize()
+
+    smabt.plot_SMA_results()
+    fig = plt.gcf()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    string = base64.b64encode(buf.read())
+    data_sma = urllib.parse.quote(string)
+
+    smabt.plot_RSI_results()
+    fig = plt.gcf()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    string = base64.b64encode(buf.read())
+    data_rsi = urllib.parse.quote(string)
+
+    smabt.plot_MR_results()
+    fig = plt.gcf()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    string = base64.b64encode(buf.read())
+    data_mr = urllib.parse.quote(string)
+
+    return data_sma, data_rsi, data_mr
+
 def return_stock_summary(stock):
     stock = stock + ".SI"
-    summary_stats = get_stock_stats(stock,1)
+    summary_stats = get_stock_stats(stock,5)
     return summary_stats
 
 
@@ -99,6 +139,24 @@ class SummaryListView(ListView):
         context = { 'sorted_posts' : x, 'future_yield' : average }
         return render(request, self.template_name, context)
 
+class PortfolioView(ListView):
+    model = Post
+    template_name = 'portfolio.html'
+
+    def get(self, request):
+        x = Post.objects.order_by('-include')
+        stock_list = x.filter(include=True)
+        stock_index = []
+        for i in stock_list:
+          stock_index.append(i.ticker)
+
+        average = stock_list.aggregate(Avg('projected_yield'))
+        context = { 'sorted_posts' : stock_list, 'future_yield' : average }
+        context['portfolio_summary'] = get_portfolio_stats(stock_index,5).to_html()
+        context['graph'],df = return_regime(stock_index)
+        context['regime_data'] = df.to_html()
+        return render(request, self.template_name, context)
+
 class BlogListView(ListView):
     model = Post
     template_name = 'home.html'
@@ -119,6 +177,7 @@ class BlogDetailView(DetailView):
         context = { 'post' : x, 'comments': comments, 'comment_form': comment_form,'total_likes':total_likes,'liked':liked }
         context['graph'],df = return_regime(x.ticker)
         context['regime_data'] = df.to_html()
+        context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
         context['latest_close'] = get_current_price(x.ticker)
         context['stock_summary'] = return_stock_summary(x.ticker).to_html()
         print(get_current_price(x.ticker))
@@ -220,7 +279,8 @@ class GenerateStockPdf(ListView):
         context['regime_data'] = df.to_html()
         context['latest_close'] = get_current_price(x.ticker)
         context['stock_summary'] = return_stock_summary(x.ticker).to_html(header=False)
-        print(context['stock_summary'])
+        context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
+        #print(context['stock_summary'])
         pdf = render_to_pdf(template_src = 'stock_detail_pdf.html',context_dict=context)
          #rendering the template
         return HttpResponse(pdf, content_type='application/pdf')

@@ -17,7 +17,7 @@
         <p>Tool to consolidate qualitative analysis on stocks</p>
       </div>
       <div class="container text-center">
-        <h2><a href="{% url 'post_new' %}">[Add a new stock]</a>   <a href="{% url 'summary_posts' %}">[Summary]</a></h2>
+        <h2><a href="{% url 'post_new' %}">[Add a new stock]</a>   <a href="{% url 'summary_posts' %}">[Summary]</a> <a href="{% url 'portfolio_view' %}">[Portfolio Statistics]</a></h2>
       </div>
       <div class="container text-right">
       {% if user.is_authenticated %}
