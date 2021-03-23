@@ -251,14 +251,24 @@ from .utils import render_to_pdf
 class GenerateSummaryPdf(ListView):
     model = Post
     template_name = 'pdf_detail.html'
-    def get(self, request, *args, **kwargs):
+
+    def get(self, request):
         x = Post.objects.order_by('-include')
-        average = x.filter(include=True).aggregate(Avg('projected_yield'))
-        context = { 'sorted_posts' : x, 'future_yield' : average }
-        #getting the template
+        stock_list = x.filter(include=True)
+        stock_index = []
+        for i in stock_list:
+          stock_index.append(i.ticker)
+
+        average = stock_list.aggregate(Avg('projected_yield'))
+        context = { 'sorted_posts' : stock_list, 'future_yield' : average }
+        context['portfolio_summary'] = get_portfolio_stats(stock_index,5).to_html()
+        context['graph'],df = return_regime(stock_index)
+        context['regime_data'] = df.to_html()
+        context['today_date'] = date.today()
         pdf = render_to_pdf(template_src = 'pdf_detail.html',context_dict=context)
          #rendering the template
         return HttpResponse(pdf, content_type='application/pdf')
+
 
 class GenerateStockPdf(ListView):
     model = Post

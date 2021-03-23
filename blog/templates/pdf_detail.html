@@ -2,16 +2,49 @@
 <html>
 
 <head>
-<style>
-table, th, td {
-  border: 2px solid black;
-  border-collapse: collapse;
-  padding: 10px;
-}
-</style>
+  <style>
+
+  table, th, td {
+    border: 2px solid black;
+  }
+
+  td {
+        padding: 2px;
+        border-collapse: collapse;
+      }
+
+  th {
+        padding-top: 2px;
+  }
+
+  img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 70%;
+      }
+
+  .row {
+    border: 2px solid black;
+    padding: 2px;
+  }
+  </style>
 </head>
 
-<h1 style="text-align:center">Stocks Selected by ERM Programme</h1>
+<h1 style="text-align:center">ERM Portfolio Report - {{ today_date }} </h1>
+<h2 style="text-align:center">Projected to yield {{ future_yield.projected_yield__avg }}% </h2>
+
+<div style="text-align: center;">
+<img src="data:image/png;base64,{{ graph }}" alt="centered image">
+</div>
+
+<h2><p>Regime Analysis</p></h2>
+{{ regime_data|safe }}
+<br>
+
+<h2><p>Information and Key Statistics:</p></h2>
+{{ portfolio_summary|safe }}
+<br>
 
 <table>
     <tr>
@@ -37,6 +70,9 @@ table, th, td {
 {% endif %}
 {% endfor %}
 </table>
+
+
+
 </html>
 
 {% endblock content %}
