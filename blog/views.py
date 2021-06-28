@@ -74,7 +74,7 @@ def return_ta_graph(stock):
     startdate  = date.today()-timedelta(365)
     enddate = date.today()
 
-    smabt = TABacktester(stock,42,252,14,14,'2010-2-28', '2021-2-28',0)
+    smabt = TABacktester(stock,42,252,14,14,startdate, enddate,0)
     smabt.optimize()
 
     smabt.plot_SMA_results()
@@ -177,7 +177,7 @@ class BlogDetailView(DetailView):
         context = { 'post' : x, 'comments': comments, 'comment_form': comment_form,'total_likes':total_likes,'liked':liked }
         context['graph'],df = return_regime(x.ticker)
         context['regime_data'] = df.to_html()
-        context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
+        #context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
         context['latest_close'] = get_current_price(x.ticker)
         context['stock_summary'] = return_stock_summary(x.ticker).to_html()
         print(get_current_price(x.ticker))
@@ -289,7 +289,7 @@ class GenerateStockPdf(ListView):
         context['regime_data'] = df.to_html()
         context['latest_close'] = get_current_price(x.ticker)
         context['stock_summary'] = return_stock_summary(x.ticker).to_html(header=False)
-        context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
+        #context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
         #print(context['stock_summary'])
         pdf = render_to_pdf(template_src = 'stock_detail_pdf.html',context_dict=context)
          #rendering the template

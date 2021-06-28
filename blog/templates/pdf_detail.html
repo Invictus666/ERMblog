@@ -49,23 +49,20 @@
 <table>
     <tr>
       <th scope="col">Stock</th>
-      <th scope="col">Ticker</th>
-      <th scope="col">Current Price</th>
-      <th scope="col">Target Price</th>
+      <th scope="col">Business</th>
+      <th scope="col">Price</th>
       <th scope="col">Current Yield</th>
-      <th scope="col">Projected Yield</th>
       <th scope="col">Rationale</th>
+
     </tr>
  {% for post in sorted_posts %}
  {% if post.include %}
     <tr>
-      <th scope="row">{{ post.title }}</th>
-      <td style="text-align:center">{{ post.ticker }}</td>
-      <td style="text-align:center">${{ post.current_price }}</td>
-      <td style="text-align:center">${{ post.target_price }}</td>
-      <td style="text-align:center">{{ post.current_yield }}%</td>
-      <td style="text-align:center">{{ post.projected_yield }}%</td>
-      <td style="text-align:center">{{ post.rationale }}</td>
+      <th scope="row">{{ post.title }} <br> ({{ post.ticker }})</th>
+      <td style="text-align:left">{{ post.business }}</td>
+      <td style="text-align:center">${{ post.current_price }} <br> (Target : ${{ post.target_price }})</td>
+      <td style="text-align:center">{{ post.current_yield }}% <br> (Projected : {{ post.projected_yield }}%)</td>
+      <td style="text-align:left">{{ post.rationale }}</td>
     </tr>
 {% endif %}
 {% endfor %}
