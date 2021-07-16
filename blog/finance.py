@@ -39,6 +39,7 @@ def get_current_price(index):
   index = index + ".SI"
   today = date.today()
   stock_data = getData.DataReader(index,data_source='yahoo',start=today-timedelta(7),end=today)
+  #stock_data = pdr.get_data_yahoo(index,start=today-timedelta(7),end=today)
   latest_price = round(stock_data.tail(1)["Close"].iloc[0],3)
   return latest_price
 
