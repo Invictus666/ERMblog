@@ -76,7 +76,7 @@ jupyter-core==4.6.3
 jupyterlab==2.2.9
 jupyterlab-server==1.2.0
 kiwisolver==1.2.0
-lxml==4.4.2
+lxml==4.6.3
 Markdown==3.2.2
 MarkupSafe==1.1.1
 marshmallow==3.8.0
@@ -96,7 +96,7 @@ oauthlib==3.1.0
 osqp==0.6.2
 packaging==20.3
 pandas==1.0.3
-pandas-datareader==0.8.1
+pandas-datareader==0.10.0
 pandocfilters==1.4.2
 parso==0.7.0
 pathspec==0.8.0
@@ -181,5 +181,5 @@ xhtml2pdf==0.2.5
 yahoo-fin==0.8.4
 yarg==0.1.9
 yarl==1.1.0
-yfinance==0.1.54
+yfinance==0.1.63
 zipp==3.4.0
