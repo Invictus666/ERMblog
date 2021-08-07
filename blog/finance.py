@@ -103,7 +103,7 @@ def get_stock_stats(stock,lookback_in_years):
                              "Half Kelly Leverage": half_leverage,
                              "Skew" : annual_skew,
                              "Excess Kurtosis" : annual_kurtosis,
-                             "Maximum Drawdown ()" : max_drawdown*100,
+                             "Maximum Drawdown (%)" : max_drawdown*100,
                              "Maximum Drawdown Date" : max_drawdown_date,
                              "Maximum Drawdown Duration" : max_drawdown_duration,
                              "Jarque Bera Test" : jarque_bera_test[0],
@@ -141,7 +141,7 @@ def get_portfolio_stats(portfolio,lookback_in_years):
     returns = df["Mean"]
     print(returns)
     number_days = returns.shape[0]
-    
+
     risk_free_rate = 3
     daily_return = ((returns+1).prod()**(1/number_days)-1)
     annual_return = round(((daily_return+1)**252 - 1)*100,2)
@@ -192,7 +192,7 @@ def get_portfolio_stats(portfolio,lookback_in_years):
                            "Half Kelly Leverage": half_leverage,
                            "Skew" : annual_skew,
                            "Excess Kurtosis" : annual_kurtosis,
-                           "Maximum Drawdown ()" : max_drawdown*100,
+                           "Maximum Drawdown (%)" : max_drawdown*100,
                            "Maximum Drawdown Date" : max_drawdown_date,
                            "Maximum Drawdown Duration" : max_drawdown_duration,
                            "Jarque Bera Test" : jarque_bera_test[0],
