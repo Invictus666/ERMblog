@@ -52,11 +52,14 @@ def get_stock_stats(stock,lookback_in_years):
 
       number_days = returns.shape[0]
 
-      risk_free_rate = 0.3
+      risk_free_rate = 3
       daily_return = ((returns+1).prod()**(1/number_days)-1)
-      annual_return = round(((daily_return+1)**252 - 1)*100,3)
-      annual_std = round(returns.std()*np.sqrt(252)*100,3)
-      annual_semideviation = round(returns[returns < returns.mean()].std()*np.sqrt(252)*100,3)
+      annual_return = round(((daily_return+1)**252 - 1)*100,2)
+      annual_std = round(returns.std()*np.sqrt(252)*100,2)
+      long_term_growth_rate = round(annual_return - (annual_std*annual_std/100)/2 ,2)
+      optimal_leverage = round(((annual_return - 3)/100) / ((annual_std/100)**2),2)
+      half_leverage = round(optimal_leverage / 2,2)
+      annual_semideviation = round(returns[returns < returns.mean()].std()*np.sqrt(252)*100,2)
       daily_skew = returns.skew()
       annual_skew = daily_skew/np.sqrt(252)
       daily_kurtosis = returns.kurtosis()
@@ -66,28 +69,43 @@ def get_stock_stats(stock,lookback_in_years):
       previous_peaks = wealth_index.cummax()
       drawdown = (wealth_index - previous_peaks)/previous_peaks
 
-      max_drawdown = drawdown.min()
-      max_drawdown_date = drawdown.idxmin()
+      max_drawdown = round(drawdown.min(),4)
+      max_drawdown_date = drawdown.idxmin().strftime("%b %d %Y")
+
+      drawdown_duration = np.zeros(drawdown.shape)
+      for t in np.arange(1, drawdown.shape[0]):
+          if drawdown[t]==0:
+              drawdown_duration[t]=0
+          else:
+              drawdown_duration[t] = drawdown_duration[t-1]+1
+      max_drawdown_duration = drawdown_duration.max()
 
       jarque_bera_test = stats.jarque_bera(returns)
 
-      historical_var_1 = round(var_historic(returns,1)*100,3)
-      historical_var_5 = round(var_historic(returns,5)*100,3)
-      cornish_fisher_var_5 = round(var_cornish_fisher(returns,5)*100,3)
-      cornish_fisher_var_1 = round(var_cornish_fisher(returns,1)*100,3)
-      cvar_historic_1 = round(cvar_historic(returns,1)*100,3)
-      cvar_historic_5 = round(cvar_historic(returns,5)*100,3)
+      historical_var_1 = round(var_historic(returns,1)*100,2)
+      historical_var_5 = round(var_historic(returns,5)*100,2)
+      cornish_fisher_var_5 = round(var_cornish_fisher(returns,5)*100,2)
+      cornish_fisher_var_1 = round(var_cornish_fisher(returns,1)*100,2)
+      cvar_historic_1 = round(cvar_historic(returns,1)*100,2)
+      cvar_historic_5 = round(cvar_historic(returns,5)*100,2)
 
-      sharpe = (annual_return - risk_free_rate)/annual_std
+      sharpe = round((annual_return - risk_free_rate)/annual_std,2)
+      sortino = round((annual_return - risk_free_rate)/annual_semideviation,2)
+      calmar = round((-annual_return/max_drawdown/100),2)
 
       output = pd.DataFrame({"Number of Years" : lookback_in_years,
                              "Yahoo Stock Ticker" : stock,
-                             "Annual Return" : annual_return,
-                             "Annual Standard Deviation" : annual_std,
-                             "Annual Semi-Deviation" : annual_semideviation,
+                             "Annual Return (%)" : annual_return,
+                             "Annual Standard Deviation (%)" : annual_std,
+                             "Annual Semi-Deviation (%)" : annual_semideviation,
+                             "Long term growth (%)" : long_term_growth_rate,
+                             "Optimal Full Kelly Leverage" : optimal_leverage,
+                             "Half Kelly Leverage": half_leverage,
                              "Skew" : annual_skew,
                              "Excess Kurtosis" : annual_kurtosis,
-                             "Maximum Drawdown" : max_drawdown,
+                             "Maximum Drawdown ()" : max_drawdown*100,
+                             "Maximum Drawdown Date" : max_drawdown_date,
+                             "Maximum Drawdown Duration" : max_drawdown_duration,
                              "Jarque Bera Test" : jarque_bera_test[0],
                              "Jarque Bera Test p-Value" : jarque_bera_test[1],
                              "Historical Daily Var (99%)" : historical_var_1,
@@ -95,8 +113,9 @@ def get_stock_stats(stock,lookback_in_years):
                              "Cornish-Fisher Daily Var (99%)" : cornish_fisher_var_1,
                              "Cornish-Fisher Daily Var (95%)" : cornish_fisher_var_5,
                              "CVAR Historic (99%)" : cvar_historic_1,
-                             "CVAR Historic (95%)" : cvar_historic_5,
-                             "Sharpe Ratio (Risk-Free Rate = 0.3%)" : sharpe,
+                             "Sharpe Ratio (Risk-Free Rate = 3%)" : sharpe,
+                             "Sortino Ratio (Risk-Free Rate = 3%)" : sortino,
+                              "Calmar Ratio" : calmar,
                              },index=[0])
 
       output = output.transpose()
@@ -122,12 +141,15 @@ def get_portfolio_stats(portfolio,lookback_in_years):
     returns = df["Mean"]
     print(returns)
     number_days = returns.shape[0]
-
-    risk_free_rate = 0.3
+    
+    risk_free_rate = 3
     daily_return = ((returns+1).prod()**(1/number_days)-1)
-    annual_return = round(((daily_return+1)**252 - 1)*100,3)
-    annual_std = round(returns.std()*np.sqrt(252)*100,3)
-    annual_semideviation = round(returns[returns < returns.mean()].std()*np.sqrt(252)*100,3)
+    annual_return = round(((daily_return+1)**252 - 1)*100,2)
+    annual_std = round(returns.std()*np.sqrt(252)*100,2)
+    long_term_growth_rate = round(annual_return - (annual_std*annual_std/100)/2 ,2)
+    optimal_leverage = round(((annual_return - 3)/100) / ((annual_std/100)**2),2)
+    half_leverage = round(optimal_leverage / 2,2)
+    annual_semideviation = round(returns[returns < returns.mean()].std()*np.sqrt(252)*100,2)
     daily_skew = returns.skew()
     annual_skew = daily_skew/np.sqrt(252)
     daily_kurtosis = returns.kurtosis()
@@ -137,28 +159,42 @@ def get_portfolio_stats(portfolio,lookback_in_years):
     previous_peaks = wealth_index.cummax()
     drawdown = (wealth_index - previous_peaks)/previous_peaks
 
-    max_drawdown = drawdown.min()
-    max_drawdown_date = drawdown.idxmin()
+    max_drawdown = round(drawdown.min(),4)
+    max_drawdown_date = drawdown.idxmin().strftime("%b %d %Y")
+
+    drawdown_duration = np.zeros(drawdown.shape)
+    for t in np.arange(1, drawdown.shape[0]):
+        if drawdown[t]==0:
+            drawdown_duration[t]=0
+        else:
+            drawdown_duration[t] = drawdown_duration[t-1]+1
+    max_drawdown_duration = drawdown_duration.max()
 
     jarque_bera_test = stats.jarque_bera(returns)
 
-    historical_var_1 = round(var_historic(returns,1)*100,3)
-    historical_var_5 = round(var_historic(returns,5)*100,3)
-    cornish_fisher_var_5 = round(var_cornish_fisher(returns,5)*100,3)
-    cornish_fisher_var_1 = round(var_cornish_fisher(returns,1)*100,3)
-    cvar_historic_1 = round(cvar_historic(returns,1)*100,3)
-    cvar_historic_5 = round(cvar_historic(returns,5)*100,3)
+    historical_var_1 = round(var_historic(returns,1)*100,2)
+    historical_var_5 = round(var_historic(returns,5)*100,2)
+    cornish_fisher_var_5 = round(var_cornish_fisher(returns,5)*100,2)
+    cornish_fisher_var_1 = round(var_cornish_fisher(returns,1)*100,2)
+    cvar_historic_1 = round(cvar_historic(returns,1)*100,2)
+    cvar_historic_5 = round(cvar_historic(returns,5)*100,2)
 
-    sharpe = (annual_return - risk_free_rate)/annual_std
+    sharpe = round((annual_return - risk_free_rate)/annual_std,2)
+    sortino = round((annual_return - risk_free_rate)/annual_semideviation,2)
+    calmar = round((-annual_return/max_drawdown/100),2)
 
     output = pd.DataFrame({"Number of Years" : lookback_in_years,
-                           "Annual Return(%)" : annual_return,
-                           "Annual Standard Deviation(%)" : annual_std,
+                           "Annual Return (%)" : annual_return,
+                           "Annual Standard Deviation (%)" : annual_std,
                            "Annual Semi-Deviation (%)" : annual_semideviation,
+                           "Long term growth (%)" : long_term_growth_rate,
+                           "Optimal Full Kelly Leverage" : optimal_leverage,
+                           "Half Kelly Leverage": half_leverage,
                            "Skew" : annual_skew,
                            "Excess Kurtosis" : annual_kurtosis,
-                           "Maximum Drawdown(%)" : max_drawdown*100,
+                           "Maximum Drawdown ()" : max_drawdown*100,
                            "Maximum Drawdown Date" : max_drawdown_date,
+                           "Maximum Drawdown Duration" : max_drawdown_duration,
                            "Jarque Bera Test" : jarque_bera_test[0],
                            "Jarque Bera Test p-Value" : jarque_bera_test[1],
                            "Historical Daily Var (99%)" : historical_var_1,
@@ -166,8 +202,9 @@ def get_portfolio_stats(portfolio,lookback_in_years):
                            "Cornish-Fisher Daily Var (99%)" : cornish_fisher_var_1,
                            "Cornish-Fisher Daily Var (95%)" : cornish_fisher_var_5,
                            "CVAR Historic (99%)" : cvar_historic_1,
-                           "CVAR Historic (95%)" : cvar_historic_5,
-                           "Sharpe Ratio (Risk-Free Rate = 0.3%)" : sharpe,
+                           "Sharpe Ratio (Risk-Free Rate = 3%)" : sharpe,
+                           "Sortino Ratio (Risk-Free Rate = 3%)" : sortino,
+                            "Calmar Ratio" : calmar,
                            },index=[0])
 
     output = output.transpose()
