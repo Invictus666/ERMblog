@@ -19,7 +19,6 @@ boto3==1.14.10
 botocore==1.17.10
 bs4==0.0.1
 cachetools==4.1.0
-ccxt==1.30.59
 certifi==2019.11.28
 cffi==1.14.2
 cfgv==3.2.0
@@ -54,7 +53,6 @@ Flask==1.1.1
 future==0.18.2
 gunicorn==20.0.4
 html5lib==1.1
-hurst==0.0.5
 identify==1.4.28
 idna==2.8
 importlib-metadata==3.4.0
