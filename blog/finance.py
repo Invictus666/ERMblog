@@ -7,6 +7,7 @@ from scipy import stats
 from scipy.stats import norm
 import yfinance as yf
 from datetime import date,timedelta
+from hurst import compute_Hc, random_walk
 
 yf.pdr_override()
 
@@ -64,6 +65,7 @@ def get_stock_stats(stock,lookback_in_years):
       annual_skew = daily_skew/np.sqrt(252)
       daily_kurtosis = returns.kurtosis()
       annual_kurtosis = daily_skew/252
+      hurst_exp, c_hurst, hurst_data = compute_Hc(returns, kind='change', simplified=True)
 
       wealth_index = 1000*(1+returns).cumprod()
       previous_peaks = wealth_index.cummax()
@@ -103,6 +105,7 @@ def get_stock_stats(stock,lookback_in_years):
                              "Half Kelly Leverage": half_leverage,
                              "Skew" : annual_skew,
                              "Excess Kurtosis" : annual_kurtosis,
+                             "Hurst Exponent" : hurst_exp,
                              "Maximum Drawdown (%)" : max_drawdown*100,
                              "Maximum Drawdown Date" : max_drawdown_date,
                              "Maximum Drawdown Duration" : max_drawdown_duration,
@@ -154,6 +157,7 @@ def get_portfolio_stats(portfolio,lookback_in_years):
     annual_skew = daily_skew/np.sqrt(252)
     daily_kurtosis = returns.kurtosis()
     annual_kurtosis = daily_skew/252
+    hurst_exp, c_hurst, hurst_data = compute_Hc(returns, kind='change', simplified=True)
 
     wealth_index = 1000*(1+returns).cumprod()
     previous_peaks = wealth_index.cummax()
@@ -192,6 +196,7 @@ def get_portfolio_stats(portfolio,lookback_in_years):
                            "Half Kelly Leverage": half_leverage,
                            "Skew" : annual_skew,
                            "Excess Kurtosis" : annual_kurtosis,
+                           "Hurst Exponent" : hurst_exp,
                            "Maximum Drawdown (%)" : max_drawdown*100,
                            "Maximum Drawdown Date" : max_drawdown_date,
                            "Maximum Drawdown Duration" : max_drawdown_duration,
