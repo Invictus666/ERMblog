@@ -86,6 +86,7 @@ def get_stock_stats(stock,lookback_in_years):
 
       historical_var_1 = round(var_historic(returns,1)*100,2)
       historical_var_5 = round(var_historic(returns,5)*100,2)
+      monthly_var_1 = round(-annual_return/12 + 2.33 * annual_std / 3.46, 2)
       cornish_fisher_var_5 = round(var_cornish_fisher(returns,5)*100,2)
       cornish_fisher_var_1 = round(var_cornish_fisher(returns,1)*100,2)
       cvar_historic_1 = round(cvar_historic(returns,1)*100,2)
@@ -99,6 +100,7 @@ def get_stock_stats(stock,lookback_in_years):
                              "Yahoo Stock Ticker" : stock,
                              "Annual Return (%)" : annual_return,
                              "Annual Standard Deviation (%)" : annual_std,
+                             "Approximated Monthly Var (99%)" : monthly_var_1,
                              "Annual Semi-Deviation (%)" : annual_semideviation,
                              "Long term growth (%)" : long_term_growth_rate,
                              "Optimal Full Kelly Leverage" : optimal_leverage,
@@ -129,18 +131,21 @@ def get_stock_stats(stock,lookback_in_years):
 def extract_portfolio_data(portfolio,lookback_in_years):
     today = date.today()
     df = pd.DataFrame(columns=portfolio)
+    stock_number = 0
+
     for stock in portfolio:
         stock = stock + ".SI"
+        stock_number = stock_number + 1
         stock_data = getData.DataReader(stock,data_source='yahoo',start=today-timedelta(lookback_in_years*252),end=today)
         returns = stock_data["Adj Close"].pct_change().dropna()
         df[stock] = returns
     df['Mean'] = df.mean(axis=1)
     df['Index'] = (1+df["Mean"]).cumprod(axis=0)
-    return df
+    return df,stock_number
 
 def get_portfolio_stats(portfolio,lookback_in_years):
 
-    df = extract_portfolio_data(portfolio,lookback_in_years)
+    df,stock_number = extract_portfolio_data(portfolio,lookback_in_years)
     returns = df["Mean"]
     print(returns)
     number_days = returns.shape[0]
@@ -178,6 +183,7 @@ def get_portfolio_stats(portfolio,lookback_in_years):
 
     historical_var_1 = round(var_historic(returns,1)*100,2)
     historical_var_5 = round(var_historic(returns,5)*100,2)
+    monthly_var_1 = round(-annual_return/12 + 2.33 * annual_std / 3.46, 2)
     cornish_fisher_var_5 = round(var_cornish_fisher(returns,5)*100,2)
     cornish_fisher_var_1 = round(var_cornish_fisher(returns,1)*100,2)
     cvar_historic_1 = round(cvar_historic(returns,1)*100,2)
@@ -187,9 +193,11 @@ def get_portfolio_stats(portfolio,lookback_in_years):
     sortino = round((annual_return - risk_free_rate)/annual_semideviation,2)
     calmar = round((-annual_return/max_drawdown/100),2)
 
-    output = pd.DataFrame({"Number of Years" : lookback_in_years,
+    output = pd.DataFrame({"Number of Stocks" : stock_number,
+                           "Number of Years" : lookback_in_years,
                            "Annual Return (%)" : annual_return,
                            "Annual Standard Deviation (%)" : annual_std,
+                           "Approximated Monthly Var (99%)" : monthly_var_1,
                            "Annual Semi-Deviation (%)" : annual_semideviation,
                            "Long term growth (%)" : long_term_growth_rate,
                            "Optimal Full Kelly Leverage" : optimal_leverage,
