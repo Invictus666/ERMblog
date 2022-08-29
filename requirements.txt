@@ -56,7 +56,6 @@ html5lib==1.1
 hurst==0.0.5
 identify==1.4.28
 idna==2.8
-importlib-metadata==3.4.0
 ipykernel==5.2.1
 ipython==7.14.0
 ipython-genutils==0.2.0
@@ -168,7 +167,6 @@ typing-extensions==3.7.4.3
 tzlocal==2.1
 urllib3==1.25.7
 validators==0.15.0
-virtualenv==20.0.10
 virtualenv-clone==0.5.4
 watchdog==0.10.2
 wcwidth==0.1.9
