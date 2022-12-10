@@ -15,6 +15,7 @@ from scipy import stats
 from scipy.stats import norm
 import yfinance as yf
 from datetime import date,timedelta
+from hurst import compute_Hc, random_walk
 
 import cvxpy as cp
 import seaborn as sns
@@ -545,7 +546,7 @@ def return_portfolio_regime_graph(stock_list):
    for i in stock_list:
      stocks.append(i + ".SI")
 
-   print(stocks)
+   #print(stocks)
 
    stock_data = build_portfolio_prices_dataframe(stocks,5)
    stock_data["Ret"][0] = 0
@@ -554,14 +555,14 @@ def return_portfolio_regime_graph(stock_list):
    regime_data["Ret"] = stock_data["Ret"]*100
    regime_data["Portfolio"] = stock_data["Portfolio"]
 
-   print(regime_data)
+   #print(regime_data)
 
    plt = plot_regime_color_new(regime_data, lambda_value=10,log_TR = True,label="Portfolio")
 
-   print(regime_data)
+   #print(regime_data)
 
-   normal_data = stock_data[regime_data["State"]=="Normal"]
-   crash_data = stock_data[regime_data["State"]=="Crash"]
+   normal_data = regime_data[regime_data["State"]=="Normal"]
+   crash_data = regime_data[regime_data["State"]=="Crash"]
 
    stock_return = (1+regime_data["Ret"]/100).prod()**(252/len(regime_data))-1
    normal_return = (1+normal_data["Ret"]/100).prod()**(252/len(normal_data))-1
@@ -576,7 +577,7 @@ def return_portfolio_regime_graph(stock_list):
    crash_std = (crash_data["Ret"]/100).std()*np.sqrt(252)*100
 
    df = pd.DataFrame({'Normal Regime':[normal_return,normal_std],'Crash Regime':[crash_return,crash_std],'Overall Performance':[stock_return,stock_std]},index=['Annualised Return (%)','Annualised Standard Deviation (%)'])
-   #print(df)
+   print(df)
 
    return plt,df
 
