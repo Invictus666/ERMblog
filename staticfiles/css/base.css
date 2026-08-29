@@ -371,23 +371,25 @@ a:hover { text-decoration: none; }
 .df-table-wrap .dataframe {
   width: 100%;
   border-collapse: collapse;
-  font-size: .8rem;
+  font-size: .7rem;
   color: #1e293b;
+  table-layout: fixed;
 }
 
 .df-table-wrap th,
 .df-table-wrap td {
-  padding: 5px 10px;
+  padding: 4px 8px;
   text-align: left;
   border-bottom: 1px solid #f1f5f9;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .df-table-wrap th {
   background: #f8fafc;
   font-weight: 600;
   color: #475569;
-  font-size: .75rem;
+  font-size: .65rem;
   text-transform: uppercase;
   letter-spacing: .4px;
 }

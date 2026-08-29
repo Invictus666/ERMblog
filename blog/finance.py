@@ -82,7 +82,7 @@ def get_stock_stats(stock,lookback_in_years):
       drawdown = (wealth_index - previous_peaks)/previous_peaks
 
       max_drawdown = round(drawdown.min(),4)
-      max_drawdown_date = drawdown.idxmin()
+      max_drawdown_date = drawdown.idxmin().strftime('%Y-%m-%d')
 
       jarque_bera_test = stats.jarque_bera(returns)
 
@@ -173,7 +173,7 @@ def get_portfolio_stats(portfolio,lookback_in_years):
     drawdown = (wealth_index - previous_peaks)/previous_peaks
 
     max_drawdown = round(drawdown.min(),4)
-    max_drawdown_date = drawdown.idxmin()
+    max_drawdown_date = drawdown.idxmin().strftime('%Y-%m-%d')
 
     jarque_bera_test = stats.jarque_bera(returns)
 
