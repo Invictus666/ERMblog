@@ -1,13 +1,8 @@
-import numpy as np
-from pandas.plotting import register_matplotlib_converters
-import pandas as pd
-import scipy
-import matplotlib.pyplot as plt
-import yfinance as yf
-from datetime import date,timedelta
-
+import matplotlib
+matplotlib.use('Agg')
 import scipy as sp
 import matplotlib.pyplot as plt
+from django.core.cache import cache
 import pandas_datareader.data as getData
 import pandas as pd
 import numpy as np
@@ -27,6 +22,11 @@ plt.rcParams['ytick.labelsize'] = 16
 plt.rcParams['font.family'] = 'DejaVu Sans'
 
 def build_stock_prices_dataframe(stocklist,lookback_in_years,monthly=False):
+      key = f"price_df:{'|'.join(sorted(stocklist))}:{lookback_in_years}:{monthly}"
+      cached = cache.get(key)
+      if cached is not None:
+          return cached
+
       today = date.today()
       start_date = today-timedelta(lookback_in_years*252)
 
@@ -42,9 +42,15 @@ def build_stock_prices_dataframe(stocklist,lookback_in_years,monthly=False):
       if monthly:
         stocks_dataframe = stocks_dataframe.resample("M").mean()
 
+      cache.set(key, stocks_dataframe, timeout=3600)
       return stocks_dataframe
 
 def build_portfolio_prices_dataframe(stocklist,lookback_in_years):
+      key = f"port_price_df:{'|'.join(sorted(stocklist))}:{lookback_in_years}"
+      cached = cache.get(key)
+      if cached is not None:
+          return cached
+
       today = date.today()
       start_date = today-timedelta(lookback_in_years*252)
       stocks_dataframe = pd.DataFrame()
@@ -53,13 +59,14 @@ def build_portfolio_prices_dataframe(stocklist,lookback_in_years):
         stock_data = yf.download(stock,start_date,today)
         returns_data = stock_data["Close"]
         stocks_dataframe[stock] = returns_data.ffill(axis=0)
-        stocks_dataframe[stock] = stocks_dataframe[stock].pct_change()
+        stocks_dataframe[stock] = stocks_dataframe[stock].pct_change(fill_method=None)
 
       stocks_dataframe['Ret'] = stocks_dataframe.mean(axis=1)
       stocks_dataframe['Return'] =  stocks_dataframe.mean(axis=1) + 1
       stocks_dataframe['Portfolio'] = stocks_dataframe['Return'].cumprod()
-      stocks_dataframe['Portfolio'][0] = 1
+      stocks_dataframe.loc[stocks_dataframe.index[0], 'Portfolio'] = 1
 
+      cache.set(key, stocks_dataframe, timeout=3600)
       return stocks_dataframe
 
 
@@ -121,7 +128,7 @@ def regime_hist(asset_pd, column_number, regime_col):
 
 def Q_Q_plot(asset_data, column_num):
     plt.figure(figsize=(12,9))
-    res = scipy.stats.probplot(ret[:,column_num], plot=plt)
+    res = stats.probplot(ret[:,column_num], plot=plt)
     plt.title('Q-Q Plot of Asset: ' + asset_data.columns[column_num], fontsize=24)
     plt.ylabel('Returns')
     plt.show()
@@ -452,17 +459,16 @@ def fund_simulation(holdings, asset_return, hold_type='fixed',spending_rate=0.03
 
 def plot_regime_color_new(dataset, regime_num=0, TR_num=1, lambda_value=16, log_TR = True,label = ""):
     '''Plot of return series versus regime'''
+    dataset = dataset.copy()
     returns = dataset.iloc[:,regime_num]
     TR = dataset.iloc[:,TR_num]
     betas = trend_filtering(returns.values,lambda_value)
     betas_df = pd.Series(betas,index=dataset.index)
-    #print(TR)
-    #print(betas)
     regimelist = regime_switch(betas)
-    #print(regimelist)
     curr_reg = np.sign(betas[0]-1e-5)
-    y_max = np.max(TR) #+ 500
+    y_max = np.max(TR)
     state = []
+    fig = None
 
     if log_TR:
         fig, ax = plt.subplots(figsize=(12, 10))
@@ -477,20 +483,14 @@ def plot_regime_color_new(dataset, regime_num=0, TR_num=1, lambda_value=16, log_
                 state.extend(["Crash"]*(regimelist[i+1]-regimelist[i]))
             curr_reg = -1 * curr_reg
 
-        #fig.set_size_inches(7,2)
-        #plt.plot(TR, label='Total Return)
-        #plt.plot(betas_df,color="black",label='Fitted Series')
-        plt.plot(TR)
-        plt.ylabel(f'{label}')
+        ax.plot(TR)
+        ax.set_ylabel(f'{label}')
+        ax.set_xlabel('Year')
+        ax.set_xlim([dataset.index[0], dataset.index[-1]])
+        ax.set_title(f'Regime Plot of {label} values', fontsize=40)
         plt.xticks(rotation=30)
-        plt.yticks()
-        plt.xlabel('Year')
-        #plt.yscale('log')
-        plt.xlim([dataset.index[0], dataset.index[-1]])
-        plt.title(f'Regime Plot of {label} values', fontsize=40)
-        plt.legend(loc='upper right')
     dataset["State"] = state
-    return plt
+    return fig, dataset
 
 def annualized_return_from_percent(returns):
   if len(returns) == 0:
@@ -502,7 +502,7 @@ def annualized_std_from_percent(returns):
     return np.nan
   return (returns/100).std()*np.sqrt(252)*100
 
-def analyse_regime(stocks_ticker):
+def analyse_regime(stocks_data):
 
   normal_data = stocks_data[stocks_data["State"]=="Normal"]
   crash_data = stocks_data[stocks_data["State"]=="Crash"]
@@ -515,13 +515,11 @@ def analyse_regime(stocks_ticker):
   normal_std = annualized_std_from_percent(normal_data["Ret"])
   crash_std = annualized_std_from_percent(crash_data["Ret"])
 
-  #print(f"Normal Shape {len(normal_data)} Crash Shape {len(crash_data)} ")
-
   print(f"          Overall return = {round(stocks_return*100,2)}%, SD = {round(stocks_std,2)}%")
   print(f"          Normal return = {round(normal_return*100,2)}%, SD = {round(normal_std,2)}%")
   print(f"          Crash return = {round(crash_return*100,2)}, SD = {round(crash_std,2)}%")
 
-  df = pd.DataFrame({'Normal':[normal_return,normal_std],'Crash':[crash_return,crash_std],'Overall':[stock_return,stock_std]})
+  df = pd.DataFrame({'Normal':[normal_return,normal_std],'Crash':[crash_return,crash_std],'Overall':[stocks_return,stocks_std]})
   print(df)
 
 
@@ -531,7 +529,7 @@ def return_regime_graph(stock_ticker):
   stock_data = build_stock_prices_dataframe([stock],5,monthly=False)
   stock_data["Ret"] = stock_data.pct_change()*100
   stock_data = stock_data[['Ret', stock]].dropna()
-  plt = plot_regime_color_new(stock_data, lambda_value=10,log_TR = True,label=stock)
+  fig, stock_data = plot_regime_color_new(stock_data, lambda_value=10,log_TR = True,label=stock)
 
   normal_data = stock_data[stock_data["State"]=="Normal"]
   crash_data = stock_data[stock_data["State"]=="Crash"]
@@ -549,9 +547,8 @@ def return_regime_graph(stock_ticker):
   crash_std = annualized_std_from_percent(crash_data["Ret"])
 
   df = pd.DataFrame({'Normal Regime':[normal_return,normal_std],'Crash Regime':[crash_return,crash_std],'Overall Performance':[stock_return,stock_std]},index=['Annualised Return (%)','Annualised Standard Deviation (%)'])
-  #print(df)
 
-  return plt,df
+  return fig, df
 
 def return_portfolio_regime_graph(stock_list):
 
@@ -563,7 +560,7 @@ def return_portfolio_regime_graph(stock_list):
    #print(stocks)
 
    stock_data = build_portfolio_prices_dataframe(stocks,5)
-   stock_data["Ret"][0] = 0
+   stock_data.loc[stock_data.index[0], "Ret"] = 0
 
    regime_data =  pd.DataFrame()
    regime_data["Ret"] = stock_data["Ret"]*100
@@ -571,9 +568,7 @@ def return_portfolio_regime_graph(stock_list):
 
    #print(regime_data)
 
-   plt = plot_regime_color_new(regime_data, lambda_value=10,log_TR = True,label="Portfolio")
-
-   #print(regime_data)
+   fig, regime_data = plot_regime_color_new(regime_data, lambda_value=10,log_TR = True,label="Portfolio")
 
    normal_data = regime_data[regime_data["State"]=="Normal"]
    crash_data = regime_data[regime_data["State"]=="Crash"]
@@ -591,9 +586,8 @@ def return_portfolio_regime_graph(stock_list):
    crash_std = annualized_std_from_percent(crash_data["Ret"])
 
    df = pd.DataFrame({'Normal Regime':[normal_return,normal_std],'Crash Regime':[crash_return,crash_std],'Overall Performance':[stock_return,stock_std]},index=['Annualised Return (%)','Annualised Standard Deviation (%)'])
-   print(df)
 
-   return plt,df
+   return fig, df
 
 #plt,df = return_regime_graph('CJLU.SI')
 #plt.show()
