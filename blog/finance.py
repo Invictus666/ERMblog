@@ -7,6 +7,7 @@ from scipy import stats
 from scipy.stats import norm
 import yfinance as yf
 from datetime import date,timedelta
+from django.core.cache import cache
 
 def var_historic(r, level=5):
   if isinstance(r, pd.DataFrame):
@@ -35,16 +36,22 @@ def cvar_historic(r, level=5):
 
 def get_current_price(index):
   index = index + ""
+  key = f"price:{index}"
+  cached = cache.get(key)
+  if cached is not None:
+      return cached
   today = date.today()
   start_date = today-timedelta(7)
   stock_data = yf.download(index,auto_adjust=False,start=start_date,end=today)
-  #stock_data = pdr.get_data_yahoo(index,start=today-timedelta(7),end=today)
   latest_price = round(stock_data.tail(1)["Adj Close"][index].iloc[0],3)
-  print("Latest Price",latest_price)
+  cache.set(key, latest_price, timeout=300)
   return latest_price
 
 def get_stock_stats(stock,lookback_in_years):
-      stock = stock
+      key = f"stock_stats:{stock}:{lookback_in_years}"
+      cached = cache.get(key)
+      if cached is not None:
+          return cached
       today = date.today()
       start_date = today-timedelta(lookback_in_years*252)
       stock_data = yf.download(stock,auto_adjust=False,start=start_date,end=today)
@@ -116,10 +123,9 @@ def get_stock_stats(stock,lookback_in_years):
                               "Calmar Ratio" : calmar,
                              },index=[0])
 
-      print(output)
       output = output.transpose()
       output = output.rename(columns={0:"Value"})
-
+      cache.set(key, output, timeout=3600)
       return output
 
 def extract_portfolio_data(portfolio,lookback_in_years):
@@ -139,6 +145,10 @@ def extract_portfolio_data(portfolio,lookback_in_years):
     return df,stock_number
 
 def get_portfolio_stats(portfolio,lookback_in_years):
+    key = f"port_stats:{'|'.join(sorted(portfolio))}:{lookback_in_years}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
 
     df,stock_number = extract_portfolio_data(portfolio,lookback_in_years)
     returns = df["Mean"]
@@ -206,5 +216,5 @@ def get_portfolio_stats(portfolio,lookback_in_years):
 
     output = output.transpose()
     output = output.rename(columns={0:"Portfolio Statistic"})
-
+    cache.set(key, output, timeout=3600)
     return output

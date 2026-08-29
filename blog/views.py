@@ -10,7 +10,7 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.db.models import Q, Avg
 
 from .models import Post,Comment,Vote
-from .forms import CommentForm
+from .forms import CommentForm, PostForm
 from .finance import get_current_price,get_stock_stats,get_portfolio_stats
 from .regime import return_regime_graph,return_portfolio_regime_graph
 from .ta import TABacktester
@@ -29,19 +29,19 @@ from datetime import date,timedelta
 def return_regime(stock):
 
     if type(stock) is list:
-      plt,df = return_portfolio_regime_graph(stock)
+      fig, df = return_portfolio_regime_graph(stock)
     else:
       stock = stock + ""
-      plt,df = return_regime_graph(stock)
+      fig, df = return_regime_graph(stock)
 
-    fig = plt.gcf()
     fig.tight_layout()
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight')
+    plt.close(fig)
     buf.seek(0)
     string = base64.b64encode(buf.read())
     data = urllib.parse.quote(string)
-    return data,df
+    return data, df
 
 
 def return_graph(stock):
@@ -59,9 +59,9 @@ def return_graph(stock):
     consolidated["Adj Close"].plot(grid=True,label=stock)
     plt.legend()
 
-    fig = plt.gcf()
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
     string = base64.b64encode(buf.read())
     data = urllib.parse.quote(string)
@@ -80,6 +80,7 @@ def return_ta_graph(stock):
     fig = plt.gcf()
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
     string = base64.b64encode(buf.read())
     data_sma = urllib.parse.quote(string)
@@ -88,6 +89,7 @@ def return_ta_graph(stock):
     fig = plt.gcf()
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
     string = base64.b64encode(buf.read())
     data_rsi = urllib.parse.quote(string)
@@ -96,6 +98,7 @@ def return_ta_graph(stock):
     fig = plt.gcf()
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
+    plt.close(fig)
     buf.seek(0)
     string = base64.b64encode(buf.read())
     data_mr = urllib.parse.quote(string)
@@ -151,9 +154,16 @@ class PortfolioView(ListView):
 
         average = stock_list.aggregate(Avg('projected_yield'))
         context = { 'sorted_posts' : stock_list, 'future_yield' : average }
-        context['portfolio_summary'] = get_portfolio_stats(stock_index,5).to_html()
-        context['graph'],df = return_regime(stock_index)
-        context['regime_data'] = df.to_html()
+        try:
+            context['portfolio_summary'] = get_portfolio_stats(stock_index,5).to_html()
+        except Exception:
+            context['portfolio_summary'] = '<p>Portfolio statistics unavailable.</p>'
+        try:
+            context['graph'], df = return_regime(stock_index)
+            context['regime_data'] = df.to_html(na_rep='N/A')
+        except Exception:
+            context['graph'] = None
+            context['regime_data'] = '<p>Regime data unavailable.</p>'
         return render(request, self.template_name, context)
 
 class BlogListView(ListView):
@@ -174,23 +184,35 @@ class BlogDetailView(DetailView):
         else:
             liked=False
         context = { 'post' : x, 'comments': comments, 'comment_form': comment_form,'total_likes':total_likes,'liked':liked }
-        context['graph'],df = return_regime(x.ticker)
-        context['regime_data'] = df.to_html()
-        #context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
-        context['latest_close'] = get_current_price(x.ticker)
-        context['stock_summary'] = return_stock_summary(x.ticker).to_html()
-        print(get_current_price(x.ticker))
+        try:
+            context['graph'], df = return_regime(x.ticker)
+            context['regime_data'] = df.to_html(na_rep='N/A')
+        except Exception:
+            context['graph'] = None
+            context['regime_data'] = '<p>Chart data unavailable.</p>'
+        try:
+            context['latest_close'] = get_current_price(x.ticker)
+        except Exception:
+            context['latest_close'] = None
+        try:
+            context['stock_summary'] = return_stock_summary(x.ticker).to_html()
+        except Exception:
+            context['stock_summary'] = '<p>Statistics unavailable.</p>'
         return render(request, self.template_name, context)
 
-class BlogCreateView(CreateView):
+class BlogCreateView(LoginRequiredMixin, CreateView):
     model = Post
     template_name = 'post_new.html'
-    fields = ['title','ticker','current_price','target_price','current_yield','projected_yield','author','business','pros','cons','include','rationale']
+    form_class = PostForm
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
 
 class BlogUpdateView(UpdateView):
     model = Post
     template_name = 'post_edit.html'
-    fields = ['title','ticker','current_price','target_price','current_yield','projected_yield','business','pros','cons','include','rationale']
+    form_class = PostForm
 
 class BlogDeleteView(DeleteView):
     model = Post
@@ -243,11 +265,17 @@ class DeleteVoteView(LoginRequiredMixin, View):
 
 
 def generate_business_summary(request):
+    from django.core.cache import cache
     ticker = request.GET.get('ticker', '').strip()
     if not ticker:
         return HttpResponse(json.dumps({'error': 'No ticker provided'}), content_type='application/json', status=400)
+
+    cache_key = f"biz_summary:{ticker}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return HttpResponse(cached, content_type='application/json')
+
     try:
-        # Fetch the long business description directly from yfinance
         info = yf.Ticker(ticker).info
         long_description = info.get('longBusinessSummary', '')
         if not long_description:
@@ -273,14 +301,25 @@ def generate_business_summary(request):
         dividend_yield = info.get('dividendYield')
         current_yield = round(dividend_yield, 2) if dividend_yield else None
 
-        return HttpResponse(json.dumps({
+        payload = json.dumps({
             'summary': summary,
             'company_name': company_name,
             'current_price': current_price,
             'current_yield': current_yield,
-        }), content_type='application/json')
+        })
+        cache.set(cache_key, payload, timeout=86400)
+        return HttpResponse(payload, content_type='application/json')
     except Exception as e:
         return HttpResponse(json.dumps({'error': str(e)}), content_type='application/json', status=500)
+
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def clear_cache(request):
+    from django.core.cache import cache
+    cache.clear()
+    return HttpResponse(json.dumps({'status': 'Cache cleared successfully'}), content_type='application/json')
 
 
 #importing get_template from loader
@@ -303,9 +342,16 @@ class GenerateSummaryPdf(ListView):
 
         average = stock_list.aggregate(Avg('projected_yield'))
         context = { 'sorted_posts' : stock_list, 'future_yield' : average }
-        context['portfolio_summary'] = get_portfolio_stats(stock_index,5).to_html()
-        context['graph'],df = return_regime(stock_index)
-        context['regime_data'] = df.to_html()
+        try:
+            context['portfolio_summary'] = get_portfolio_stats(stock_index,5).to_html()
+        except Exception:
+            context['portfolio_summary'] = ''
+        try:
+            context['graph'], df = return_regime(stock_index)
+            context['regime_data'] = df.to_html(na_rep='N/A')
+        except Exception:
+            context['graph'] = None
+            context['regime_data'] = ''
         context['today_date'] = date.today()
         pdf = render_to_pdf(template_src = 'pdf_detail.html',context_dict=context)
          #rendering the template
@@ -327,10 +373,20 @@ class GenerateStockPdf(ListView):
         else:
             liked=False
         context = { 'post' : x, 'comments': comments, 'comment_form': comment_form,'total_likes':total_likes,'liked':liked }
-        context['graph'],df = return_regime(x.ticker)
-        context['regime_data'] = df.to_html()
-        context['latest_close'] = get_current_price(x.ticker)
-        context['stock_summary'] = return_stock_summary(x.ticker).to_html(header=False)
+        try:
+            context['graph'], df = return_regime(x.ticker)
+            context['regime_data'] = df.to_html(na_rep='N/A')
+        except Exception:
+            context['graph'] = None
+            context['regime_data'] = ''
+        try:
+            context['latest_close'] = get_current_price(x.ticker)
+        except Exception:
+            context['latest_close'] = None
+        try:
+            context['stock_summary'] = return_stock_summary(x.ticker).to_html(header=False)
+        except Exception:
+            context['stock_summary'] = ''
         #context['sma_graph'], context['rsi_graph'], context['mr_graph'] = return_ta_graph(x.ticker)
         #print(context['stock_summary'])
         pdf = render_to_pdf(template_src = 'stock_detail_pdf.html',context_dict=context)

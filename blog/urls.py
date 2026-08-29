@@ -1,9 +1,7 @@
 from django.urls import path
 from .views import BlogListView,BlogDetailView,BlogCreateView,BlogUpdateView,BlogDeleteView,CommentCreateView,CommentDeleteView
 from .views import AddVoteView,DeleteVoteView,LikeView,LikeHomeView,SummaryListView,PortfolioView
-from .views import GenerateSummaryPdf, GenerateStockPdf, generate_business_summary
-from django.urls import reverse_lazy
-from wkhtmltopdf.views import PDFTemplateView
+from .views import GenerateSummaryPdf, GenerateStockPdf, generate_business_summary, clear_cache
 
 urlpatterns = [
     path('post/<int:pk>/delete/',BlogDeleteView.as_view(),name='post_delete'),
@@ -23,4 +21,5 @@ urlpatterns = [
     path('pdf/', GenerateSummaryPdf.as_view()),
     path('pdf/<int:pk>', GenerateStockPdf.as_view()),
     path('api/generate-business-summary', generate_business_summary, name='generate_business_summary'),
+    path('api/clear-cache', clear_cache, name='clear_cache'),
 ]

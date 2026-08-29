@@ -4,18 +4,18 @@ from django.utils import timezone
 from django.core.validators import MinLengthValidator
 
 class Post(models.Model):
-    title=models.CharField(max_length=50,default="")
+    title=models.CharField(max_length=200,default="")
     ticker=models.CharField(max_length=10,default="")
     current_price=models.FloatField(default=0)
     target_price=models.FloatField(default=0)
     current_yield=models.FloatField(default=0)
     projected_yield=models.FloatField(default=0)
     author=models.ForeignKey('auth.User', on_delete=models.CASCADE,)
-    business=models.TextField(max_length=500,default="")
-    pros = models.TextField(max_length=500,default="")
-    cons = models.TextField(max_length=500,default="")
+    business=models.TextField(default="")
+    pros = models.TextField(default="")
+    cons = models.TextField(default="")
     include=models.BooleanField(default=True)
-    rationale=models.TextField(max_length=500,default="")
+    rationale=models.TextField(default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField('auth.user', related_name="blog_posts")
